@@ -34,6 +34,19 @@ set -eu
 TETHER_REPO="${TETHER_REPO:-tetherlab/install}"
 GITHUB="https://github.com"
 
+# The hosted master URL. The website's /install.sh route replaces the
+# @@TETHER_MASTER_URL@@ token below with its own configured master at serve time,
+# so `curl tetherlab.io/install.sh | sh` points the shim at the hosted control
+# plane with nothing for the user to type. An explicit TETHER_MASTER_URL env var
+# always wins; a direct-from-GitHub install leaves the token literal, in which
+# case the shim keeps its built-in default and the user can point it later with
+# `tether login --master-url <url>`.
+_INJECTED_MASTER_URL='@@TETHER_MASTER_URL@@'
+TETHER_MASTER_URL="${TETHER_MASTER_URL:-$_INJECTED_MASTER_URL}"
+case "$TETHER_MASTER_URL" in
+    '@@'*'@@' | '') TETHER_MASTER_URL='' ;;
+esac
+
 # Indirection so the test harness can mock all network reads. This is a TEST
 # SEAM ONLY: it is honored exclusively when the script is sourced by the harness
 # (TETHER_INSTALL_SOURCED=1). In a normal `curl … | sh` run it is inert, so a
@@ -650,6 +663,15 @@ main() {
         # THIS script was pipe-executed (curl … | sh wires fd 0 to the pipe). The
         # binary's onboard flow re-checks the TTY and runs login → workspace →
         # bootstrap itself; we only invoke it.
+        # Point the shim at the hosted master BEFORE onboarding so it targets the
+        # hosted control plane, not the shim's built-in localhost dev default (a
+        # remote machine has nothing there). The credential lives in a separate
+        # 0600 file, so --force only rewrites the non-secret config; </dev/null
+        # keeps this non-interactive init from triggering the onboarding wizard
+        # (onboard drives login -> workspace -> bootstrap below).
+        if [ -n "$TETHER_MASTER_URL" ]; then
+            "$_dest_dir/tether" init --global --master-url "$TETHER_MASTER_URL" --force </dev/null >/dev/null 2>&1 || true
+        fi
         "$_dest_dir/tether" onboard </dev/tty ||
             info "onboarding did not complete — run \`tether login\` to retry."
     else
