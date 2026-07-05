@@ -31,7 +31,7 @@ set -eu
 # ── Constants ───────────────────────────────────────────────────────────────
 
 # TODO(#634): confirm canonical owner/repo slug before the public launch.
-TETHER_REPO="${TETHER_REPO:-tetherlab/tether}"
+TETHER_REPO="${TETHER_REPO:-tetherlab/install}"
 GITHUB="https://github.com"
 
 # The hosted master URL. The website's /install.sh route replaces the

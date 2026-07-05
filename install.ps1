@@ -60,7 +60,7 @@ $ErrorActionPreference = 'Stop'
 # ── Constants ───────────────────────────────────────────────────────────────
 
 # TODO(#634): confirm canonical owner/repo slug before the public launch.
-$Script:TetherRepo = if ($env:TETHER_REPO) { $env:TETHER_REPO } else { 'tetherlab/tether' }
+$Script:TetherRepo = if ($env:TETHER_REPO) { $env:TETHER_REPO } else { 'tetherlab/install' }
 $Script:GitHub = 'https://github.com'
 
 function Write-Info { param([string]$Message) Write-Host "tether-install: $Message" }
