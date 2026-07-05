@@ -31,7 +31,7 @@ set -eu
 # ── Constants ───────────────────────────────────────────────────────────────
 
 # TODO(#634): confirm canonical owner/repo slug before the public launch.
-TETHER_REPO="${TETHER_REPO:-tetherlab/install}"
+TETHER_REPO="${TETHER_REPO:-tetherlab/tether}"
 GITHUB="https://github.com"
 
 # The hosted master URL. The website's /install.sh route replaces the
@@ -531,7 +531,7 @@ Options:
 
 Environment:
   TETHER_INSTALL_DIR   Install dir (default: ~/.tether/bin).
-  TETHER_REPO          GitHub owner/repo slug (default: tetherlab/install).
+  TETHER_REPO          GitHub owner/repo slug (default: tetherlab/tether).
   TETHER_NO_ONBOARD    Set to skip the post-install sign-in and workspace setup.
 EOF
 }
@@ -658,20 +658,20 @@ main() {
         info "CI detected — skipping sign-in. Run \`tether login\` to sign in."
     elif [ -e /dev/tty ]; then
         info "signing you in ..."
-        # Reopen /dev/tty as the child's stdin so the device-login browser prompt
-        # and the onboard workspace/bootstrap prompts can read user input even when
-        # THIS script was pipe-executed (curl … | sh wires fd 0 to the pipe). The
-        # binary's onboard flow re-checks the TTY and runs login → workspace →
-        # bootstrap itself; we only invoke it.
         # Point the shim at the hosted master BEFORE onboarding so it targets the
         # hosted control plane, not the shim's built-in localhost dev default (a
         # remote machine has nothing there). The credential lives in a separate
         # 0600 file, so --force only rewrites the non-secret config; </dev/null
         # keeps this non-interactive init from triggering the onboarding wizard
-        # (onboard drives login -> workspace -> bootstrap below).
+        # (onboard drives login → workspace → bootstrap below).
         if [ -n "$TETHER_MASTER_URL" ]; then
             "$_dest_dir/tether" init --global --master-url "$TETHER_MASTER_URL" --force </dev/null >/dev/null 2>&1 || true
         fi
+        # Reopen /dev/tty as the child's stdin so the device-login browser prompt
+        # and the onboard workspace/bootstrap prompts can read user input even when
+        # THIS script was pipe-executed (curl … | sh wires fd 0 to the pipe). The
+        # binary's onboard flow re-checks the TTY and runs login → workspace →
+        # bootstrap itself; we only invoke it.
         "$_dest_dir/tether" onboard </dev/tty ||
             info "onboarding did not complete — run \`tether login\` to retry."
     else
